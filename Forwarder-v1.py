@@ -18,6 +18,7 @@ from socket import *
 ## Client Socket Communication initialization
 serverIP = '192.168.10.250'    # PC Server IP
 serverPort = 5001               # PC Server Port
+
 # line settings ++++++++
 sensorNo=15
 sen=[0]*15

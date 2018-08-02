@@ -18,6 +18,7 @@ from socket import *
 ## Client Socket Communication initialization
 serverIP = '192.168.10.250'    # PC Server IP
 serverPort = 5001               # PC Server Port
+clientSocket=''
 
 ## Variables for serial data response
 connected = False
@@ -44,15 +45,50 @@ data_good = ''
 total_reject=0
 total_production=0
 
+#Flag for error
+e_f=0
+
 ## Establish connection to COM Port
 ## Connection from HMI
 locations=['/dev/ttyUSB0']
-## COM Port settings
-for device in locations: 
+## loop until the device tells us it is ready
+while not connected:
+    ## COM Port settings
+    for device in locations: 
+        try:
+            # print ("Trying...",device)
+            ## Serial Initialization
+            ser_to_hmi = serial.Serial(device,      #port
+                                19200,              #baudrate
+                                serial.EIGHTBITS,   #bytesize
+                                serial.PARITY_ODD,  #parity
+                                serial.STOPBITS_ONE,#stop bit
+                                0,                  #timeout
+                                False,              #xonxoff
+                                False,              #rtscts
+                                0,                  #write_timeout
+                                False,              #dsrdtr
+                                None,               #inter byte timeout
+                                None                #exclusive
+                                )
+            connected=True
+        except:
+            connected=False
+            print ("trying to connect to ", device)
+    time.sleep(1.5)
+if connected:
+    serin = ser_to_hmi.read()
+    print ("Connected to ",device)
+    connected=False
+
+## Try to connect to PLC
+device = '/dev/ttyUSB1'
+## loop until the device tells us it is ready
+while not connected:
     try:
-        print ("Trying...",device)
+        # print ("Trying...",device)
         ## Serial Initialization
-        ser_to_hmi = serial.Serial(device,      #port
+        ser_to_plc = serial.Serial(device,      #port
                             19200,              #baudrate
                             serial.EIGHTBITS,   #bytesize
                             serial.PARITY_ODD,  #parity
@@ -65,42 +101,14 @@ for device in locations:
                             None,               #inter byte timeout
                             None                #exclusive
                             )
-        break
+        connected=True
     except:
-        print ("Failed to connect on ", device)
-
-## loop until the device tells us it is ready
-while not connected:
-    serin = ser_to_hmi.read()
-    connected = True
-print ("Connected to ",device)
-connected=False
-
-## Try to connect to PLC
-device = '/dev/ttyUSB1'
-try:
-    print ("Trying...",device)
-    ## Serial Initialization
-    ser_to_plc = serial.Serial(device,      #port
-                        19200,              #baudrate
-                        serial.EIGHTBITS,   #bytesize
-                        serial.PARITY_ODD,  #parity
-                        serial.STOPBITS_ONE,#stop bit
-                        0,                  #timeout
-                        False,              #xonxoff
-                        False,              #rtscts
-                        0,                  #write_timeout
-                        False,              #dsrdtr
-                        None,               #inter byte timeout
-                        None                #exclusive
-                        )
-except:
-    print ("Failed to connect on ", device)
-## loop until the device tells us it is ready
-while not connected:
+        connected=False
+        print ("trying to connect to ", device)
+    time.sleep(1.5)
+if connected:
     serin = ser_to_plc.read()
-    connected = True
-print ("Connected to ",device)
+    print ("Connected to ",device)
 
 class evSecondThread(threading.Thread):
     def __init__(self):
@@ -109,10 +117,38 @@ class evSecondThread(threading.Thread):
         sendData()
 
 def sendData():
-    global data_reject,data_good
+    global data_reject,data_good,total_production,e_f,clientSocket
     while 1:
-        print ('Data')
-        time.sleep(1)
+        if not((data_good == '') and (data_reject =='')):
+            while 1:
+                try:
+                    clientSocket=socket(AF_INET, SOCK_STREAM)
+                    clientSocket.connect((serverIP, serverPort))
+                    break
+                except Exception as e:
+                    e_f=1
+                    print ('error : '+ str(e))
+                    break #+++
+            if e_f==1:
+                e_f=0
+            else:
+                # Send all data (Total production and Data Good)
+                all_data = str(total_production) +'&'+ str(data_good)
+                clientSocket.send(all_data.encode('utf-8'))
+                while 1:
+                    msg=clientSocket.recv(32)
+                    msg=msg.decode('ascii')
+                    # Get 'ack' from Socket Server
+                    if msg=='ack':
+                        clientSocket.send('ok'.encode('utf-8'))
+                        clientSocket.close()
+                        break
+                    elif msg=='closed':
+                        print ('Socket Server is closed')
+                        clientSocket.close()
+                        break
+        time.sleep(0.5)
+
 # Create new thread for sending data every second
 try:
     evSecThread=evSecondThread()
@@ -122,7 +158,6 @@ except Exception as e:
 # Start thread
 evSecThread.start()
 
-e_f=0   #Flag for error +++
 while 1:
     try:
         # Waiting data from HMI
@@ -186,35 +221,6 @@ while 1:
                                         break
                             # Get total production
                             total_production=data_good+data_reject
-
-                            if not((data_good == '') and (data_reject =='')):
-                                while 1:
-                                    try:
-                                        clientSocket=socket(AF_INET, SOCK_STREAM)
-                                        clientSocket.connect((serverIP, serverPort))
-                                        break
-                                    except Exception as e:
-                                        e_f=1
-                                        print ('error : '+ str(e))
-                                        break #+++
-                                if e_f==1:
-                                    e_f=0
-                                else:
-                                    # Send all data (Total production and Data Good)
-                                    all_data = str(total_production) +'&'+ str(data_good)
-                                    clientSocket.send(all_data.encode('utf-8'))
-                                    while 1:
-                                        msg=clientSocket.recv(32)
-                                        msg=msg.decode('ascii')
-                                        # Get 'ack' from Socket Server
-                                        if msg=='ack':
-                                            clientSocket.send('ok'.encode('utf-8'))
-                                            clientSocket.close()
-                                            break
-                                        elif msg=='closed':
-                                            print ('Socket Server is closed')
-                                            clientSocket.close()
-                                            break
                             resp=''
                             break
                 cmd_from_hmi=''
@@ -230,7 +236,10 @@ print ("Connection is closed!")
 ser_to_hmi.close()
 ser_to_plc.close()
 ## close the socket connection
-clientSocket.close()
+try:
+    clientSocket.close()
+except:
+    print ('clientSocket variable is not initialized!')
 
     
         
