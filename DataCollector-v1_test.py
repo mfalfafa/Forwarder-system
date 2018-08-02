@@ -266,6 +266,10 @@ if __name__=="__main__":
         pass
     except Exception as e:
         print (str(e))
+    finally:
+        # Turn off indicator light
+        GPIO.output(indicator_pin, 0)
+        GPIO.cleanup()
 
 # Note :
 # For this data collector script will send data at every second, doesn't matter if all data are received or not.

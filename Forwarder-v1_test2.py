@@ -249,6 +249,7 @@ try:
     clientSocket.close()
 except:
     print ('clientSocket variable is not initialized!')
+    
 # Turn off indicator light
 GPIO.output(indicator_pin, 0)
 GPIO.cleanup()
