@@ -1,0 +1,2 @@
+Note :
+Disable wlan0 to enable eth0 for Socket and MQTT connection.
