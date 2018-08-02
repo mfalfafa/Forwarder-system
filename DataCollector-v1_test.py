@@ -253,7 +253,7 @@ def main(argv):
         thread[i].start()
     # Start new thread for sending data ev second and Lakban thread
     evSecThread.start()
-    evSecondLakbanThread.start()
+    lakbanThread.start()
     
     while 1:
         mqttc.loop(timeout=0.001)
