@@ -235,14 +235,15 @@ def main(argv):
 
     # Create new thread for sending data every second
     try:
-        evSecThread=evSecondThread(name, lakbanSocket, lakbanPort)
+        evSecThread=evSecondThread()
     except Exception as e:
         print ("Error: unable to start thread!")
         print (str(e))
 
     # Create new thread for Lakban machine for every second
     try:
-        lakbanThread=evSecondLakbanThread()
+        name="Lakban-0"
+        lakbanThread=evSecondLakbanThread(name, lakbanSocket, lakbanPort)
     except Exception as e:
         print ("Error: unable to start thread!")
         print (str(e))
