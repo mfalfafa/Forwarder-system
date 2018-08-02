@@ -153,7 +153,7 @@ while 1:
                                         print (data_good)
                                         break
 
-                            if not((data_good == '') && (data_reject =='')):
+                            if not((data_good == '') and (data_reject =='')):
                                 while 1:
                                     try:
                                         clientSocket=socket(AF_INET, SOCK_STREAM)
