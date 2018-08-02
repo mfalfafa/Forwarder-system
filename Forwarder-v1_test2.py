@@ -75,7 +75,7 @@ while not connected:
         except:
             connected=False
             print ("trying to connect to ", device)
-    time.sleep(1.5)
+            time.sleep(1.5)
 if connected:
     serin = ser_to_hmi.read()
     print ("Connected to ",device)
@@ -105,7 +105,7 @@ while not connected:
     except:
         connected=False
         print ("trying to connect to ", device)
-    time.sleep(1.5)
+        time.sleep(1.5)
 if connected:
     serin = ser_to_plc.read()
     print ("Connected to ",device)

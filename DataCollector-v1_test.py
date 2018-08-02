@@ -20,7 +20,7 @@ print ('-----------------------------\n')
 # Start port for clients
 serverPort = 5001
 # Number of clients
-n=5
+n=15
 serverSocket = [socket(AF_INET, SOCK_STREAM)]*n
 serverIP = '192.168.10.250'
 ready_f=0
