@@ -13,6 +13,7 @@
 import serial
 import time
 import threading
+import RPi.GPIO as GPIO
 from socket import *
 
 ## Client Socket Communication initialization
@@ -47,6 +48,12 @@ total_production=0
 
 #Flag for error
 e_f=0
+
+# Indicator pin initialization
+indicator_pin=25
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(indicator_pin, GPIO.OUT)
+GPIO.output(indicator_pin, 0)
 
 ## Establish connection to COM Port
 ## Connection from HMI
@@ -133,7 +140,7 @@ def sendData():
                 e_f=0
             else:
                 # Send all data (Total production and Data Good)
-                all_data = str(total_production) +'&'+ str(data_good)
+                all_data = '@'+str(total_production) +'@'+ str(data_good)+'@'
                 clientSocket.send(all_data.encode('utf-8'))
                 while 1:
                     msg=clientSocket.recv(32)
@@ -158,6 +165,8 @@ except Exception as e:
 # Start thread
 evSecThread.start()
 
+# If ready then turn on indicator light
+GPIO.output(indicator_pin, 1)
 while 1:
     try:
         # Waiting data from HMI
@@ -240,6 +249,9 @@ try:
     clientSocket.close()
 except:
     print ('clientSocket variable is not initialized!')
+# Turn off indicator light
+GPIO.output(indicator_pin, 0)
+GPIO.cleanup()
 
     
         
