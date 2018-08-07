@@ -3,7 +3,7 @@ import paho.mqtt.client as mqtt
 import threading
 import sys
 import time
-# import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO
 from socket import *
 
 print ('*** Data Colector v1.0 ***')
@@ -12,15 +12,17 @@ print ('*** 24 July 2018 ***')
 print ('-----------------------------\n')
 
 # Indicator pin initialization
-# indicator_pin=25
-# GPIO.setmode(GPIO.BCM)
-# GPIO.setup(indicator_pin, GPIO.OUT)
-# GPIO.output(indicator_pin, 0)
+indicator_pin=25
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(indicator_pin, GPIO.OUT)
+GPIO.output(indicator_pin, 0)
 
 # Start port for clients
 serverPort = 5001
+# Number of lines
+numb_of_line=4
 # Number of clients
-n=15
+n=14
 serverSocket = [socket(AF_INET, SOCK_STREAM)]*n
 serverIP = '192.168.10.250'
 ready_f=0
@@ -43,12 +45,22 @@ connectionSocket=[0]*n
 thread=[0]*n
 
 # Socket Server Initialization
-lakbanPort = 5000
-lakbanSocket = socket(AF_INET, SOCK_STREAM)
-lakbanSocket=socket(AF_INET, SOCK_STREAM)
-lakbanSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-lakbanSocket.bind((serverIP,lakbanPort))
-lakbanSocket.listen(1)
+lakbanPort=5000
+lakbanSocket=0
+ready_f=0
+while 1:
+    try:
+        lakbanSocket = socket(AF_INET, SOCK_STREAM)
+        lakbanSocket=socket(AF_INET, SOCK_STREAM)
+        lakbanSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+        lakbanSocket.bind((serverIP,lakbanPort))
+        lakbanSocket.listen(1)
+        ready_f=1
+    except Exception as e :
+        print ('Lakban socket initialization error : '+ str(e))
+        time.sleep(1)
+    if ready_f==1:
+        break
 
 # Variables to save data for each client
 client=[0]*n
@@ -59,7 +71,11 @@ buff=[0]*n
 
 # for receiving data from Lakban machine every second
 lakbanThread=''
-dataLakban=[0]*n
+dataLakban=[0]*numb_of_line
+line=[0]*numb_of_line
+
+# Array to save all total production and good data
+all_data=[[0,0] for i in range(n)]
 
 #========= For MQTT ===========
 def on_connect(mqttc, obj, flags, rc):
@@ -84,39 +100,39 @@ def on_log(mqttc, obj, level, string):
 def on_disconnect(client, userdata, rc):
     print ('Problem : '+ str(rc))
     # Trying to reconnect to the server
-    # ready_f=0
-    # while 1:
-    #     try:
-    #         mqttc.connect("192.168.10.151", 1883, 60)
-    #         ready_f=1
-    #     except:
-    #         print ('Trying to reconnect to the server...')
-    #     if ready_f==1:
-    #         break
+    ready_f=0
+    while 1:
+        try:
+            mqttc.connect("192.168.10.151", 1883, 60)
+            ready_f=1
+        except:
+            print ('Trying to reconnect to the server...')
+        if ready_f==1:
+            break
 
 #MQTT Connection
-# mqttc = mqtt.Client()
-# mqttc.on_message = on_message
-# mqttc.on_connect = on_connect
-# mqttc.on_publish = on_publish
-# mqttc.on_subscribe = on_subscribe
-# mqttc.on_disconnect = on_disconnect
+mqttc = mqtt.Client()
+mqttc.on_message = on_message
+mqttc.on_connect = on_connect
+mqttc.on_publish = on_publish
+mqttc.on_subscribe = on_subscribe
+mqttc.on_disconnect = on_disconnect
 # Uncomment to enable debug messages
 # mqttc.on_log = on_log
-ready_f=1
-# while 1:    # Looping until the Server is ready   
-#     try:
-#         mqttc.connect("192.168.10.151", 1883, 60)
-#         ready_f=1
-#     except:
-#         print ('Waiting for the server...')
-#         time.sleep(1)
-#     if ready_f==1:
-#         break
+ready_f=0
+while 1:    # Looping until the Server is ready   
+    try:
+        mqttc.connect("192.168.10.151", 1883, 60)
+        ready_f=1
+    except:
+        print ('Waiting for the server...')
+        time.sleep(1)
+    if ready_f==1:
+        break
     
 # If All configuration is ready, then set indicator led to on
-# if ready_f == 1:
-#     GPIO.output(indicator_pin, 1)
+if ready_f == 1:
+    GPIO.output(indicator_pin, 1)
     
 def main(argv):
     global client,evSecThread,lakbanThread,dataLakban
@@ -149,7 +165,7 @@ def main(argv):
 
     # For receiving data ecery second from Lakban machine
     def receiveData(name, lakbanSocket, port):
-        global dataLakban,n
+        global dataLakban,n,numb_of_line,line
         try:
             while 1:
                 # Accept connection from client (blocking mode)
@@ -162,11 +178,29 @@ def main(argv):
                 msg=msg.decode('ascii')
                 print (msg)
                 # Parsing msg
-                # Insert data to variable data lakban
-                for i in range(n):
-                    dataLakban[i]=1
-                connSocket.close()
+                end=0
+                for i in range(numb_of_line):
+                    start = msg.index( '@', end ) + len( '@' )
+                    end = msg.index( '@', start )
+                    line[i] = msg[start:end]
+                    start = msg.index( '@', end ) + len( '@' )
+                    end = msg.index( '@', start )
+                    dataLakban[i] = msg[start:end]
+                    dataLakban[i] = int(dataLakban[i])
 
+                # Sends ACK message to Client
+                connSocket.send('ack'.encode('utf-8'))
+                while 1:
+                    try:
+                        msg=connSocket.recv(32)
+                        msg=msg.decode('ascii')
+                    except:
+                        print (name + ' is closed!')
+                        connSocket.close()
+                        break
+                    if msg=='ok':
+                        connSocket.close()
+                        break
         except KeyboardInterrupt:
             pass
         except Exception as e:
@@ -174,23 +208,31 @@ def main(argv):
 
     # Sending data every second
     def sendData():
-        global collector,buff,n,client,dataLakban
+        global collector,buff,n,client,dataLakban,all_data,dataLakban
+        # Note :
+        # Data Lakban : 4 data (data line 1 - 4)
+        # Data client : client 1 - 14
+        # Total sensor data = 15 (14 clients + 1 lakban)
         while 1:
             time.sleep(1)
             data=''
-            # For 4 lines (n-1)
-            for i in range(n-1):
+            for i in range(n):
                 data=data+str(client[i])
             data='{'+data+'}'
             print (data)
-            # try:
-            #     mqttc.publish("ev_second",data,0)
-            # except:
-            #     print("There is an error on Sending Data!");
+            # print all data from line parsing
+            print ('\nall data : ')
+            print (all_data)
+            print (dataLakban)
+            # Sending data to PC Server through MQTT Protocol
+            try:
+                mqttc.publish("ev_second",data,0)
+            except:
+                print("There is an error on Sending Data!");
 
     # Get data from all clients
     def sockData( name, serverSocket, port, no):
-        global client,buff
+        global client,buff,all_data
         try:
             while 1:
                 # Accept connection from client (blocking mode)
@@ -202,7 +244,32 @@ def main(argv):
                 msg=connectionSocket[no].recv(64)
                 msg=msg.decode('ascii')
                 print (msg)
-                # Parsing msg
+                tot_production=''
+                good_data=''
+                # Parsing msg to get total production and good data
+                start = msg.index( '@' ) + len( '@' )
+                end = msg.index( '@', start )
+                tot_production = msg[start:end]
+                start = msg.index( '@', end ) + len( '@' )
+                end = msg.index( '@', start )
+                good_data = msg[start:end]
+                # Checking the value
+                if ((tot_production=='') and (good_data=='')):
+                    tot_production=0
+                    good_data=0
+                else:
+                    try:
+                        # Convert to number
+                        tot_production=int(tot_production)
+                        good_data=int(good_data)
+                    except Exception as e :
+                        tot_production=0
+                        good_data=0
+                        print ('Error converting data type : '+ str(e))
+                # Save data
+                all_data[no][0]=tot_production
+                all_data[no][1]=good_data
+
                 # Get data for each client
                 client[no]=msg
                 # buff[no]=buff[no]+1
@@ -267,10 +334,10 @@ if __name__=="__main__":
         pass
     except Exception as e:
         print (str(e))
-    # finally:
+    finally:
         # Turn off indicator light
-        # GPIO.output(indicator_pin, 0)
-        # GPIO.cleanup()
+        GPIO.output(indicator_pin, 0)
+        GPIO.cleanup()
 
 # Note :
 # For this data collector script will send data at every second, doesn't matter if all data are received or not.

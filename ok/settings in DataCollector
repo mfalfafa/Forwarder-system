@@ -1,0 +1,18 @@
+# Settings in Raspi 3:
+sudo raspi-config
+# Setting to make auto login (to execute autorun python file from /etc/profile)
+
+# Setting in /etc/network/interfaces
+auto wlan0
+iface lo inet loopback
+iface eth0 inet dhcp
+
+auto eth0
+allow-hotplug eth0
+iface eth0 inet static
+address 192.168.10.250
+netmask 255.255.255.0
+gateway 192.168.10.1
+
+# Setting in /etc/profile
+sudo python3 /home/pi/Forwarder-system/DataCollector-v1_test2_no_mqtt.py

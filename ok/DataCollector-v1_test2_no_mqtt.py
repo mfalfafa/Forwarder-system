@@ -3,7 +3,7 @@ import paho.mqtt.client as mqtt
 import threading
 import sys
 import time
-# import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO
 from socket import *
 
 print ('*** Data Colector v1.0 ***')
@@ -12,10 +12,10 @@ print ('*** 24 July 2018 ***')
 print ('-----------------------------\n')
 
 # Indicator pin initialization
-# indicator_pin=25
-# GPIO.setmode(GPIO.BCM)
-# GPIO.setup(indicator_pin, GPIO.OUT)
-# GPIO.output(indicator_pin, 0)
+indicator_pin=25
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(indicator_pin, GPIO.OUT)
+GPIO.output(indicator_pin, 0)
 
 # Start port for clients
 serverPort = 5001
@@ -115,8 +115,8 @@ ready_f=1
 #         break
     
 # If All configuration is ready, then set indicator led to on
-# if ready_f == 1:
-#     GPIO.output(indicator_pin, 1)
+if ready_f == 1:
+    GPIO.output(indicator_pin, 1)
     
 def main(argv):
     global client,evSecThread,lakbanThread,dataLakban
@@ -267,10 +267,10 @@ if __name__=="__main__":
         pass
     except Exception as e:
         print (str(e))
-    # finally:
+    finally:
         # Turn off indicator light
-        # GPIO.output(indicator_pin, 0)
-        # GPIO.cleanup()
+        GPIO.output(indicator_pin, 0)
+        GPIO.cleanup()
 
 # Note :
 # For this data collector script will send data at every second, doesn't matter if all data are received or not.

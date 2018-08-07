@@ -1,2 +1,2 @@
 Note :
-Disable wlan0 to enable eth0 for Socket and MQTT connection.
+Disable wlan0 (in your PC or connect to another wifi with different gateway) to enable eth0 for Socket and MQTT connection.

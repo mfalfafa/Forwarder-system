@@ -45,8 +45,8 @@ data_reject = ''
 data_good = ''
 total_reject=0
 total_production=0
-data_good_ready=0
 data_reject_ready=0
+data_good_ready=0
 
 #Flag for error
 e_f=0
@@ -129,7 +129,8 @@ class evSecondThread(threading.Thread):
 def sendData():
     global data_reject_ready,data_good_ready,total_production,e_f,clientSocket,conn_f
     while 1:
-        if not((data_good == '') and (data_reject =='')):
+        if not((data_good_ready == '') and (data_reject_ready =='')):
+            print ('data to forwarder server')
             while 1:
                 try:
                     clientSocket=socket(AF_INET, SOCK_STREAM)
@@ -143,15 +144,12 @@ def sendData():
             if e_f==1:
                 e_f=0
                 if conn_f==1:
+                    clientSocket.close()
                     conn_f=0
-                    try:
-                        clientSocket.close()
-                    except Exception as e:
-                        print (str(e))
             else:
                 conn_f=1
                 # Send all data (Total production and Data Good)
-                all_data = '@'+str(total_production) +'@'+ str(data_good)+'@'
+                all_data = '@'+str(total_production) +'@'+ str(data_good_ready)+'@'
                 clientSocket.send(all_data.encode('utf-8'))
                 while 1:
                     try:
@@ -167,10 +165,10 @@ def sendData():
                             clientSocket.close()
                             break
                     except Exception as e:
-                        break
                         print (str(e))
-                        # conn_f=1
-        time.sleep(0.1)
+                        #clientSocket.close()
+                        break
+        time.sleep(0.5)
 
 # Create new thread for sending data every second
 try:
@@ -188,41 +186,47 @@ while 1:
         # Waiting data from HMI
         if ser_to_hmi.inWaiting():
             x=ser_to_hmi.read()
+            x=x.decode('ascii')
             cmd_from_hmi=cmd_from_hmi + x
             if x == '\r':
                 # print ("data from HMI :")
-                print (cmd_from_hmi)
+                #print (cmd_from_hmi)
 
                 #Send CMD to PLC to get response
-                ser_to_plc.write(cmd_from_hmi)
+                ser_to_plc.write(cmd_from_hmi.encode('utf-8'))
                 #waiting for incoming serial data from PLC
                 h=0
                 while 1 :
                     h=h+1
-                    if h>=5000:
+                    # Timeout delay if there is no response from PLC
+                    if h>=1000000:  
                         break
                     if ser_to_plc.inWaiting():
                         y=ser_to_plc.read()
+                        y=y.decode('ascii')
                         resp=resp + y
                         if y=='\r':
                             # print ("data from plc :")
-                            print (resp)
+                            #print (resp)
 
                             #Send data to HMI
-                            ser_to_hmi.write(resp)
+                            ser_to_hmi.write(resp.encode('utf-8'))
 
                             # Get reject value
-                            reject_cmd = '%01#RCSY0008**'
-                            ser_to_plc.write(reject_cmd)
+                            reject_cmd = '%01#RCSY0008**\r'
+                            ser_to_plc.write(reject_cmd.encode('utf-8'))
                             data_reject=''
+                            data_reject_ready=''
                             # Waiting data from PLC
                             h=0
                             while 1:    
                                 h=h+1
-                                if h>=5000:
+                                # Timeout delay
+                                if h>=1000000:
                                     break
                                 if ser_to_plc.inWaiting():
                                     y=ser_to_plc.read()
+                                    y=y.decode('ascii')
                                     data_reject=data_reject + y
                                     if y=='\r':
                                         print (data_reject)
@@ -234,20 +238,22 @@ while 1:
                                         data_reject_ready=data_reject
                                         break
                             # Calculate total reject
-                            total_reject=total_reject+data_reject
+                            total_reject=total_reject+data_reject_ready
 
                             # Get good value
-                            good_cmd = '%01#RDD0097200972**'
-                            ser_to_plc.write(good_cmd)
+                            good_cmd = '%01#RDD0097200972**\r'
+                            ser_to_plc.write(good_cmd.encode('utf-8'))
                             data_good=''
+                            data_good_ready=''
                             # Waiting data from PLC
                             h=0
                             while 1:    
                                 h=h+1
-                                if h>=5000:
+                                if h>=1000000: # Timeout delay
                                     break
                                 if ser_to_plc.inWaiting():
                                     y=ser_to_plc.read()
+                                    y=y.decode('ascii')
                                     data_good=data_good + y
                                     if y=='\r':
                                         print (data_good)
