@@ -52,7 +52,7 @@
 	dtoverlay=pi3-disable-wifi
 	```
 	So if you want to use SSH, then you must connect to Raspi 3 with LAN Port
-
+---
 ### DataCollector settings : ###
 1. Same as Forwarder
 2. Same as Forwarder
