@@ -1,5 +1,5 @@
 ## Settings ##
-Forwarder settings : 
+### Forwarder settings : ###
 1. install **Raspbian Jessie Lite**
 2. **sudo raspi-config**
 	- **Network options**
@@ -47,3 +47,8 @@ Forwarder settings :
 	```
 	sudo reboot now
 	```
+10. If all settings are working, disable **wlan0** to prevent IP conflict between **eth0** and **wlan0**. In file **/boot/config.txt** add the following command
+	```
+	dtoverlay=pi3-disable-wifi
+	```
+	So if you want to use SSH, then you must connect to Raspi 3 with LAN Port
