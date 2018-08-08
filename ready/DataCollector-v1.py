@@ -12,7 +12,7 @@ print ('*** 24 July 2018 ***')
 print ('-----------------------------\n')
 
 # Indicator pin initialization
-indicator_pin=25
+indicator_pin = 25
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(indicator_pin, GPIO.OUT)
 GPIO.output(indicator_pin, 0)
@@ -20,9 +20,9 @@ GPIO.output(indicator_pin, 0)
 # Start port for clients
 serverPort = 5001
 # Number of lines
-numb_of_line=4
+numb_of_line = 4
 # Number of clients
-n=14
+n = 14
 serverSocket = [socket(AF_INET, SOCK_STREAM)]*n
 serverIP = '192.168.10.250'
 ready_f=0
