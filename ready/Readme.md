@@ -6,6 +6,7 @@
 		- in **Wi-fi**, enter **SSID** and **Password**
 	- **boot options**
 		- in **Desktop/CLI**, select **Console autologin**
+		- Reboot Raspi 3, and then execute next instructions after booting
 		- in **Wait for network**, select **No** in **Wait until a network connection is established**
 		- in **Splash screen**, select **No** in showing splash screen
 	- **interfacing options**
