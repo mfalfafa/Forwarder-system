@@ -12,47 +12,51 @@
 	- **interfacing options**
 		- in **SSH**, select **yes** to enable SSH
 	- Update Raspi 3 in **Update** menu
-	- **Reboot** Raspi
-	- After reboot, make sure that your Raspi 3 is connected to the internet
-3. Edit file **/etc/dhcpcd.conf** to make static IP for **eth0** interface
+3. Change keyboard layout
+	```
+	sudo nano /etc/default/keyboard
+	// Change "XKBLAYOUT" to "us", save and reboot raspi
+	```
+	After booting, make sure that your Raspi 3 is connected to the internet
+4. Edit file **/etc/dhcpcd.conf** to make static IP for **eth0** interface
 	```
 	interface eth0
 	static ip_address=192.168.10.xx/24	//xx : based on client configuration
 	static routers=192.168.10.1
 	```
-4. Edit file **/etc/dhcp/dhclient.conf** to give timeout in booting time
+5. Edit file **/etc/dhcp/dhclient.conf** to give timeout in booting time
 	```
 	uncomment timeout option and change the value :
 	timeout=15;
 	```
-5. Install **git** in Raspi 3
+6. Install **git** in Raspi 3
 	```
 	sudo apt-get update
 	sudo apt-get dist-upgrade
 	sudo apt-get install git
 	```
-6. Install python 3 modules
+7. Install python 3 modules
 	```
 	sudo apt-get install python3-pip
 	sudo pip3 install RPi.GPIO
 	sudo pip3 install pyserial
 	```
-7. Clone Forwarder files from github in **home/pi/**
+8. Clone Forwarder files from github in **home/pi/**
 	```
 	git clone https://github.com/mfalfafa/Forwarder-system.git
 	or
 	git clone git://github.com/mfalfafa/Forwarder-system.git
 	```
-8. Edit file **/etc/profile** and add the following command
+9. Edit file **/etc/profile** and add the following command
 	```
 	sudo python3 /home/pi/Forwarder-system/ready/Forwarder-v1_x.py
 	x : based on client configuration
 	```
-9. Test that all settings are work by reboot
+10. Test that all settings are work by reboot
 	```
 	sudo reboot now
 	```
-10. If all settings are working (no error), disable **wlan0** to prevent IP conflict between **eth0** and **wlan0**. In file **/boot/config.txt** add the following command
+11. If all settings are working (no error), disable **wlan0** to prevent IP conflict between **eth0** and **wlan0**. In file **/boot/config.txt** add the following command
 	```
 	dtoverlay=pi3-disable-wifi
 	```
@@ -61,25 +65,26 @@
 ### DataCollector settings : ###
 1. Same as Forwarder
 2. Same as Forwarder
-3. Same as Forwarder (based on DataCollector configuration)
-4. Same as Forwarder
+3. Same as Forwarder
+4. Same as Forwarder (based on DataCollector configuration)
 5. Same as Forwarder
-6. Install python 3 modules
+6. Same as Forwarder
+7. Install python 3 modules
 	```
 	sudo apt-get install python3-pip
 	sudo pip3 install RPi.GPIO
 	sudo pip3 install pyserial
 	sudo pip3 install paho-mqtt
 	```
-7. Clone DataCollector files from github in **home/pi/**
+8. Clone DataCollector files from github in **home/pi/**
 	```
 	git clone https://github.com/mfalfafa/Forwarder-system.git
 	or
 	git clone git://github.com/mfalfafa/Forwarder-system.git
 	```
-8. Edit file **/etc/profile** and add the following command
+9. Edit file **/etc/profile** and add the following command
 	```
 	sudo python3 /home/pi/Forwarder-system/ready/DataCollector-v1.py
 	```
-9. Same as Forwarder
 10. Same as Forwarder
+11. Same as Forwarder
