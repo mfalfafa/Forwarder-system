@@ -16,6 +16,8 @@ import threading
 import RPi.GPIO as GPIO
 from socket import *
 
+print ('Client 10')
+
 ## Client Socket Communication initialization
 serverIP = '192.168.10.250'    # PC Server IP
 serverPort = 5010               # PC Server Port
