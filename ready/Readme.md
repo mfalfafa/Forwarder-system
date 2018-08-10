@@ -65,6 +65,7 @@
 5. Same as Forwarder
 6. Install python 3 modules
 	```
+	sudo apt-get install python3-pip
 	sudo pip3 install RPi.GPIO
 	sudo pip3 install pyserial
 	sudo pip3 install paho-mqtt
