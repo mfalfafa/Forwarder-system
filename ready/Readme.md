@@ -12,6 +12,7 @@
 		- in **SSH**, select **yes** to enable SSH
 	- Update Raspi 3 in **Update** menu
 	- **Reboot** Raspi
+	- After reboot, make sure that your Raspi 3 is connected to the internet
 3. Edit file **/etc/dhcpcd.conf** to make static IP for **eth0** interface
 	```
 	interface eth0
@@ -25,10 +26,13 @@
 	```
 5. Install **git** in Raspi 3
 	```
+	sudo apt-get update
+	sudo apt-get dist-upgrade
 	sudo apt-get install git
 	```
 6. Install python 3 modules
 	```
+	sudo apt-get install python3-pip
 	sudo pip3 install RPi.GPIO
 	sudo pip3 install pyserial
 	```
