@@ -88,3 +88,5 @@
 	```
 10. Same as Forwarder
 11. Same as Forwarder
+
+> Note : using **WinSPC** for windows to transfer file between PC and Raspi 3 easily
