@@ -24,16 +24,16 @@ numb_of_line = 4
 # Number of clients
 # Client 1-16
 n = 16
-serverSocket = [socket(AF_INET, SOCK_STREAM)]*(n+1)
+serverSocket = [socket(AF_INET, SOCK_STREAM)]*n
 serverIP = '192.168.10.250'
 ready_f = 0
 while 1:    # Looping until the configurations in server-forwarder is ready   
     try :
         for i in range(n):
-            serverSocket[i+1]=socket(AF_INET, SOCK_STREAM)
-            serverSocket[i+1].setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-            serverSocket[i+1].bind((serverIP,serverPort + i))
-            serverSocket[i+1].listen(1)
+            serverSocket[i]=socket(AF_INET, SOCK_STREAM)
+            serverSocket[i].setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+            serverSocket[i].bind((serverIP,serverPort + i))
+            serverSocket[i].listen(1)
             #print ('success ' + str(i))
         ready_f=1
     except:
@@ -42,7 +42,7 @@ while 1:    # Looping until the configurations in server-forwarder is ready
     if ready_f == 1:
         break
 print ('Number of client : ' + str(n))
-connectionSocket=[0]*(n+1)
+connectionSocket=[0]*n
 thread=[0]*n
 
 # Socket Server Initialization
@@ -72,11 +72,11 @@ buff=[0]*n
 
 # for receiving data from Lakban machine every second
 lakbanThread=''
-dataLakban=[0]*(numb_of_line+1) # +1, because using index with start = 1, not zero
+dataLakban=[0]*numb_of_line
 line=[0]*numb_of_line
 
 # Array to save all total production and good data
-all_data=[[0,0] for i in range(n+1)]
+all_data=[[0,0] for i in range(n)]
 
 #========= For MQTT ===========
 def on_connect(mqttc, obj, flags, rc):
@@ -186,8 +186,8 @@ def main(argv):
                     line[i] = msg[start:end]
                     start = msg.index( '@', end ) + len( '@' )
                     end = msg.index( '@', start )
-                    dataLakban[i+1] = msg[start:end]
-                    dataLakban[i+1] = int(dataLakban[i+1])
+                    dataLakban[i] = msg[start:end]
+                    dataLakban[i] = int(dataLakban[i])
 
                 # Sends ACK message to Client
                 connSocket.send('ack'.encode('utf-8'))
@@ -209,43 +209,25 @@ def main(argv):
 
     # Sending data every second
     def sendData():
-        global collector,buff,n,client,dataLakban,all_data,numb_of_line
+        global collector,buff,n,client,dataLakban,all_data,dataLakban
         # Note :
         # Data Lakban : 4 data (data line 1 - 4)
+        # Data client : client 1 - 14
         # Total sensor data = 15 (14 clients + 1 lakban)
-        # (Oven,Creamer,Cooling,Cutting,Packing1,Packing2,Packing3,Packing4,Lakban)
         while 1:
             time.sleep(1)
-
-            # Parsing all data
-            data=['']*(numb_of_line+1)
-            k=1
-            for i in range(1,numb_of_line+1):
-                data[i]='"line'+str(i)+'":{"line":'+str(i)+','
-                for j in range(1,7):    # Oven=Creamer=Cooling=Cutting=1
-                    data[i] = data[i]+'"s'+str(j)+'":'+str(1)+','
-                packages=''
-                m=0
-                for j in range(k,k+4):
-                    for l in range(2):
-                        packages=packages+'"s'+str(7+m)+'":'+str(all_data[j][l])+','
-                        m=m+1
-                k=k+4
-                data[i]=data[i]+packages
-                data[i]=data[i]+'"s'+str(15)+'":'+str(dataLakban[i])+',"ts":'+str(time.time())+'}'
-            allDataLine='{'
-            for i in range(1,3+1):
-                allDataLine=allDataLine+data[i]+','
-            allDataLine=allDataLine+data[4]+'}'
-
+            data=''
+            for i in range(n):
+                data=data+str(client[i])
+            data='{'+data+'}'
+            print (data)
             # print all data from line parsing
-            # print ('all data : ')
-            # print (allDataLine)
-            # print (all_data)
-            # print (dataLakban)
+            print ('\nall data : ')
+            print (all_data)
+            print (dataLakban)
             # Sending data to PC Server through MQTT Protocol
             try:
-                mqttc.publish("ev_second",allDataLine,0)
+                mqttc.publish("ev_second",data,0)
             except:
                 print("There is an error on Sending Data!");
 
@@ -285,7 +267,7 @@ def main(argv):
                         tot_production=0
                         good_data=0
                         print ('Error converting data type : '+ str(e))
-                # Save data (Total Production and Good Data)
+                # Save data
                 all_data[no][0]=tot_production
                 all_data[no][1]=good_data
 
@@ -314,9 +296,8 @@ def main(argv):
     # Create new threads
     try:
         for i in range(n):
-            # i+1 = start index with 1 not 0
-            name="Client-"+str(i+1)
-            thread[i] = myThread(name, serverSocket[i+1], serverPort+i, i+1)
+            name="Client-"+str(i)
+            thread[i] = myThread(name, serverSocket[i], serverPort+i, i)
     except Exception as e:
             print ("Error: unable to start thread!")
             print (str(e))
