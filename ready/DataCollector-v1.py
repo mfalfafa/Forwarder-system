@@ -25,7 +25,7 @@ numb_of_line = 4
 n = 14
 serverSocket = [socket(AF_INET, SOCK_STREAM)]*n
 serverIP = '192.168.10.250'
-ready_f=0
+ready_f = 0
 while 1:    # Looping until the configurations in server-forwarder is ready   
     try :
         for i in range(n):
@@ -38,7 +38,7 @@ while 1:    # Looping until the configurations in server-forwarder is ready
     except:
         print ('Your IP Address for socket protocol is incorrect, please setting your IP!')        
         time.sleep(1)
-    if ready_f==1:
+    if ready_f == 1:
         break
 print ('Number of client : ' + str(n))
 connectionSocket=[0]*n
@@ -51,7 +51,7 @@ ready_f=0
 while 1:
     try:
         lakbanSocket = socket(AF_INET, SOCK_STREAM)
-        lakbanSocket=socket(AF_INET, SOCK_STREAM)
+        lakbanSocket = socket(AF_INET, SOCK_STREAM)
         lakbanSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         lakbanSocket.bind((serverIP,lakbanPort))
         lakbanSocket.listen(1)
