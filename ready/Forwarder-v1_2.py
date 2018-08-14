@@ -16,12 +16,13 @@ import threading
 import RPi.GPIO as GPIO
 from socket import *
 
-print ('Client 2')
-
 ## Client Socket Communication initialization
 serverIP = '192.168.10.250'    # PC Server IP
 serverPort = 5002               # PC Server Port
 clientSocket=''
+
+print ('Client 2')
+print ('Port '+ str(serverPort))
 
 ## Variables for serial data response
 connected = False
@@ -49,6 +50,9 @@ total_reject=0
 total_production=0
 data_reject_ready=0
 data_good_ready=0
+
+# Reset signal flag
+data_good_f=0
 
 #Flag for error
 e_f=0
@@ -225,6 +229,9 @@ while 1:
                                 h=h+1
                                 # Timeout delay
                                 if h>=1000000:
+                                    # when failing occur while chatching data from PLC
+                                    # Make auto zero if catching data from PLC failed
+                                    data_reject_ready=0
                                     break
                                 if ser_to_plc.inWaiting():
                                     y=ser_to_plc.read()
@@ -240,6 +247,11 @@ while 1:
                                         data_reject_ready=data_reject
                                         break
                             # Calculate total reject
+                            # Reset signal for total reject
+                            if data_good_ready<data_good_f:
+                                total_reject=0
+                            data_good_f=data_good_ready
+                            # Counting total reject
                             total_reject=total_reject+data_reject_ready
 
                             # Get good value
@@ -252,6 +264,8 @@ while 1:
                             while 1:    
                                 h=h+1
                                 if h>=1000000: # Timeout delay
+                                    # when failing in catching data good from PLC
+                                    data_good_ready=data_good_f
                                     break
                                 if ser_to_plc.inWaiting():
                                     y=ser_to_plc.read()
